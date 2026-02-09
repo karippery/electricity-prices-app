@@ -1,0 +1,12 @@
+[project]
+name = "electricity-prices-app"
+version = "0.1.0"
+description = "A web application that displays day-ahead electricity prices for Austria using the aWATTar Marketdata API (EPEX Spot Day-Ahead Prices)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.128.5",
+    "httpx>=0.28.1",
+    "tzdata>=2025.3",
+    "uvicorn>=0.40.0",
+]

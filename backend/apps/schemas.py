@@ -13,7 +13,7 @@ class HourlyPrice(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "timestamp_ms": 1704067200000,
+                "timestamp_ms": 1761433200000,
                 "hour_label": "02:00A",
                 "price_eur_mwh": 85.5,
                 "price_ct_kwh": 8.55,

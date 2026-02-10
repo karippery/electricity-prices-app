@@ -7,14 +7,17 @@ RUN pip install --upgrade pip && pip install --no-cache-dir uv
 
 WORKDIR /app
 
-# Copy project metadata first for caching
-COPY pyproject.toml .
+# 1. Copy ONLY dependency metadata first
+COPY pyproject.toml ./
 
-# Create virtual environment
+# 2. Create venv BEFORE copying source code
 RUN uv venv --python 3.11 .venv
 
-# Install dependencies + project (this reads pyproject.toml)
+# 3. Install dependencies using pyproject.toml
 RUN uv pip install --python .venv/bin/python .
+
+# 4. NOW copy the rest of the source code
+COPY . .
 
 # ==============================
 # Stage 2: Runtime
@@ -28,11 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends tzdata \
 
 WORKDIR /app
 
-# Copy venv
 COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app /app
 
-# Copy source code
-COPY . .
+ENV PATH="/app/.venv/bin:${PATH}"
 
 RUN chown -R app:app /app
 USER app

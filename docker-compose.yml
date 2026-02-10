@@ -26,9 +26,6 @@ services:
     container_name: electricity-backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - backend_venv:/app/.venv
     environment:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1

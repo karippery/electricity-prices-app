@@ -1,8 +1,12 @@
 # .dockerignore
-__pycache__
-*.pyc
-.venv
-.git
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.mypy_cache
+**/.git
+**/.idea
+**/node_modules
 .env
-Dockerfile
-README.md
+.env.local
+.DS_Store

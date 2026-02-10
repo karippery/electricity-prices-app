@@ -4,6 +4,9 @@ from typing import Dict
 from apps.schemas import PricesResponse, DayPrices
 from apps.services.prices import PriceService, PriceServiceError
 from config import settings
+import io
+import csv
+from fastapi.responses import StreamingResponse
 import logging
 
 logger = logging.getLogger(__name__)
@@ -207,3 +210,72 @@ def _validate_hour_counts(response: PricesResponse, dates: Dict[str, datetime.da
             raise ValueError(error_msg)
         
         logger.info(f"{day_name} ({day_date}): ✓ {actual_hours} hours (correct)")
+
+@router.get("/{date}/export-csv")
+async def export_prices_csv(
+    date: str = Path(
+        ...,
+        description="Date in YYYY-MM-DD format",
+        pattern=r"^\d{4}-\d{2}-\d{2}$"
+    )
+):
+    """
+    Export electricity prices for three days (previous, selected, next) as CSV.
+    Matches the data structure of the main GET endpoint.
+    """
+    selected_date = _validate_date(date)
+    date_range = _calculate_date_range(selected_date)
+    
+    service = PriceService()
+    raw_data = await service.fetch_market_data(
+        date_range["start_ts"],
+        date_range["end_ts"]
+    )
+    
+    result = await _process_three_days(
+        service, 
+        date_range["dates"], 
+        raw_data,
+        include_metadata=False
+    )
+    
+    # Create CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow([
+        "date", 
+        "hour", 
+        "price_eur_mwh", 
+        "price_ct_kwh",
+        "is_missing",
+        "is_dst_transition"
+    ])
+    
+    # Helper to write day data
+    def write_day_data(day_prices: DayPrices):
+        for hour in day_prices.hours:
+            writer.writerow([
+                day_prices.date,  # ISO format date string (e.g., "2025-10-25")
+                hour.hour_label,
+                hour.price_eur_mwh if hour.price_eur_mwh is not None else "",
+                hour.price_ct_kwh if hour.price_ct_kwh is not None else "",
+                hour.is_missing,
+                hour.is_dst_transition
+            ])
+    
+    # Write all three days in order: previous → selected → next
+    write_day_data(result.previous_day)
+    write_day_data(result.selected_day)
+    write_day_data(result.next_day)
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=electricity_prices_{date}_three_days.csv"
+        }
+    )

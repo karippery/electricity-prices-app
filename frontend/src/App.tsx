@@ -36,6 +36,32 @@ function App() {
     }
   };
 
+  const exportCsv = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8000/api/prices/${selectedDate}/export-csv`,
+        {
+          responseType: 'blob', // Important: expect binary data
+          headers: {
+            Accept: 'text/csv',
+          },
+        }
+      );
+
+      // Create a temporary link to trigger download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `prices_${selectedDate}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Failed to export CSV. Please try again.');
+    }
+  };
+
   const prepareChartData = (): ChartDataPoint[] => {
     if (!data) return [];
 
@@ -70,6 +96,7 @@ function App() {
             <DatePicker
               selectedDate={selectedDate}
               onChange={setSelectedDate}
+              onExportCsv={exportCsv}
             />
           </section>
 

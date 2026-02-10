@@ -67,7 +67,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ chartData }) => {
           stroke="#6366f1"
           dot={{ r: 2 }}
           activeDot={{ r: 5 }}
-          connectNulls={true}
+          connectNulls={false}
         />
 
         <Line
@@ -77,7 +77,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ chartData }) => {
           stroke="#10b981"
           dot={{ r: 2 }}
           activeDot={{ r: 5 }}
-          connectNulls={true}
+          connectNulls={false}
         />
 
         <Line
@@ -87,7 +87,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ chartData }) => {
           stroke="#f59e0b"
           dot={{ r: 2 }}
           activeDot={{ r: 5 }}
-          connectNulls={true}
+          connectNulls={false}
         />
       </LineChart>
     </ResponsiveContainer>

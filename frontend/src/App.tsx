@@ -65,15 +65,58 @@ function App() {
   const prepareChartData = (): ChartDataPoint[] => {
     if (!data) return [];
 
-    return data.selected_day.hours.map((hour, index) => ({
-      time: hour.hour_label,
-      previous: data.previous_day?.hours?.[index]?.is_missing
-        ? null
-        : data.previous_day?.hours?.[index]?.price_eur_mwh ?? null,
-      selected: hour.is_missing ? null : hour.price_eur_mwh,
-      next: data.next_day?.hours?.[index]?.is_missing
-        ? null
-        : data.next_day?.hours?.[index]?.price_eur_mwh ?? null,
+    // Build lookup maps - use hour_label as key (not static 24-hour array)
+    const selectedMap = new Map(
+      data.selected_day.hours.map(h => [
+        h.hour_label,  // Use backend's hour_label directly
+        h.is_missing ? null : h.price_eur_mwh,
+      ])
+    );
+
+    const prevMap = new Map(
+      (data.previous_day?.hours || []).map(h => [
+        h.hour_label,
+        h.is_missing ? null : h.price_eur_mwh,
+      ])
+    );
+
+    const nextMap = new Map(
+      (data.next_day?.hours || []).map(h => [
+        h.hour_label,
+        h.is_missing ? null : h.price_eur_mwh,
+      ])
+    );
+
+    // Get all unique hour labels from all three days
+    const allHourLabels = Array.from(
+      new Set([
+        ...data.selected_day.hours.map(h => h.hour_label),
+        ...(data.previous_day?.hours || []).map(h => h.hour_label),
+        ...(data.next_day?.hours || []).map(h => h.hour_label),
+      ])
+    );
+
+    // Sort labels chronologically (handles 2:00A, 2:00B correctly)
+    const sortedLabels = allHourLabels.sort((a, b) => {
+      // Helper to convert hour label to sortable number
+      const labelToSortValue = (label: string) => {
+        // Handle "02:00A" and "02:00B" for DST transition
+        if (label.includes('A')) {
+          return parseInt(label.replace('A', '')) + 0.1;
+        }
+        if (label.includes('B')) {
+          return parseInt(label.replace('B', '')) + 0.2;
+        }
+        return parseInt(label);
+      };
+      return labelToSortValue(a) - labelToSortValue(b);
+    });
+
+    return sortedLabels.map(label => ({
+      time: label,
+      selected: selectedMap.get(label) ?? null,
+      previous: prevMap.get(label) ?? null,
+      next: nextMap.get(label) ?? null,
     }));
   };
 
